@@ -7,7 +7,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js"></script>
-    <!-- <script type="module">import Bytez from "https://esm.run/bytez.js"; window.Bytez = Bytez;</script> -->
+    <script type="module">import Bytez from "https://esm.run/bytez.js"; window.Bytez = Bytez;</script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&display=swap" rel="stylesheet">
@@ -237,19 +237,7 @@
             </div>
         </div>
     </div>
-    <!-- PASSWORD EXPIRED MODAL -->
-    <!-- <div id="pwExpiredModal" class="fixed inset-0 z-[90] hidden bg-slate-900/70 flex items-center justify-center backdrop-blur-sm">
-      <div class="bg-white rounded-2xl p-7 w-96 shadow-2xl text-center fade-in border-t-4 border-amber-500">
-          <div class="w-16 h-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-lock text-3xl text-amber-600"></i></div>
-          <h3 class="font-extrabold text-xl mb-2 text-slate-800">وشەی تێپەڕ کۆنبووە</h3>
-          <p class="text-sm text-gray-500 mb-2">٣٠ رۆژ تێپەڕیوە لە دوا جارێ وشەی تێپەڕت گۆڕیوە.</p>
-          <p class="text-sm text-amber-700 font-semibold mb-6">تکایە ئێستا وشەی تێپەڕی نوێ هەڵبژێرە بۆ بەردەوامبوون.</p>
-          <div class="flex gap-3 justify-center">
-              <button onclick="closeModal('pwExpiredModal'); switchTab('mgr-settings');" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 text-white font-bold rounded-lg shadow transition">گۆڕینی وشەی تێپەڕ</button>
-              <button onclick="closeModal('pwExpiredModal')" class="flex-1 py-2.5 border border-slate-300 text-slate-600 font-bold rounded-lg hover:bg-slate-50 transition">دواتر</button>
-          </div>
-      </div>
-  </div> -->
+
     <div id="pwExpiredModal"
         class="fixed inset-0 z-[95] hidden bg-slate-900/80 flex items-center justify-center backdrop-blur-sm p-4">
         <!-- Modal Container -->
@@ -2120,11 +2108,8 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
     <script>
-        const supabaseUrl = (window.ENV && window.ENV.SUPABASE_URL) || '__SUPABASE_URL__';
-        const supabaseKey = (window.ENV && window.ENV.SUPABASE_ANON_KEY) || '__SUPABASE_ANON_KEY__';
-        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        const _supabase = supabase.createClient('https://xfkcfnscrbnwezlgmiar.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhma2NmbnNjcmJud2V6bGdtaWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTA0OTIsImV4cCI6MjA5NDUyNjQ5Mn0.yDygQlZmfRAnowr8GsIdRTWv1f4wJ4WTVb4zRlpZ4Ls');
         const CURRENT_APP_VERSION = "V 9.742026";
 
         let CURR_USER = null;
@@ -3591,7 +3576,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
 
             const isProblem = /کێشە|هەڵە|ئیش ناکات|کارناکات|خراپە|bug|error|problem|not working/i.test(text);
 
-            const OPENROUTER_API_KEY = (window.ENV && window.ENV.OPENROUTER_API_KEY) || "__OPENROUTER_API_KEY__"; // Injected via GitHub Actions
+            const OPENROUTER_API_KEY = "";
             const SYSTEM_PROMPT = `تۆ KAS Assistant یت، یاریدەدەرێکی زیرەکی و شارەزای لە سیستەمی KAS Academy Portal.
 ئەرکت تەنها ڕوونکردنەوەی سیستەمەکەیە بە هەنگاو. پێویستە ئەم زاراوە ئینگلیزییانە وەک خۆی بەکاربێنیتەوە کاتێک باسی بەشەکان دەکەیت:
 
@@ -6368,91 +6353,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             }
         });
 
-        // Github Script Injection
-        // // Github Script Injection
-        // async function loadPrivateGithubScript() {
-        //     const githubToken = (window.ENV && window.ENV.GH_TOKEN) || "__GH_TOKEN__";
-        //     const username = "smartacademysht-bot"; 
-        //     const repoName = "AI-Generator";
-        //     const filePath = "script.js"; 
-
-        //     const url = `https://api.github.com/repos/${username}/${repoName}/contents/${filePath}?t=${Date.now()}`;
-
-        //     try {
-        //         const response = await fetch(url, {
-        //             method: "GET",
-        //             headers: {
-        //                 "Authorization": `token ${githubToken}`, 
-        //                 "Accept": "application/vnd.github.v3.raw"
-        //             }
-        //         });
-
-        //         if (!response.ok) {
-        //             if (response.status === 403) {
-        //                 throw new Error("هەڵەی 403: نیشانەکەت (Token) ڕێگری لێدەکرێت. دڵنیابەوە کە Permissions بە دروستی نوێکراوەتەوە.");
-        //             } else if (response.status === 404) {
-        //                 throw new Error("هەڵەی 404: فایلەکە یان کۆگاکە لەسەر GitHub نەدۆزرایەوە.");
-        //             }
-        //             throw new Error(`هەڵە لە وەرگرتنی فایل: ${response.status} ${response.statusText}`);
-        //         }
-
-        //         const scriptContent = await response.text();
-
-        //         const scriptElement = document.createElement("script");
-        //         scriptElement.text = scriptContent;
-        //         document.head.appendChild(scriptElement);
-
-        //         console.log("سکرێپتەکە بە سەرکەوتوویی بارکرا.");
-
-        //         if(document.getElementById('errorBox')) {
-        //             document.getElementById('errorBox').classList.add('hidden');
-        //         }
-        //     } catch (e) {
-        //         console.error("GitHub Fetch Error:", e);
-        //         const errorBox = document.getElementById('errorBox');
-        //         if (errorBox) {
-        //             errorBox.innerText = "هەڵە لە بارکردنی سکرێپت: " + e.message;
-        //             errorBox.classList.remove('hidden');
-        //         }
-        //     }
-        // }
-
-        // // --- AI GENERATION LOGIC ---
-        // function generateAIContent() {
-        //     const catInput = document.getElementById('category').value;
-        //     const topInput = document.getElementById('topic').value;
-        //     const resDiv = document.getElementById('response');
-        //     const loadDiv = document.getElementById('loading');
-        //     const dbgLog = document.getElementById('debugLog');
-
-        //     if (!catInput || !topInput) {
-        //         showToast("Category and Topic are required", "red");
-        //         return;
-        //     }
-
-        //     // 1. Show Loading State
-        //     loadDiv.classList.remove('hidden');
-        //     resDiv.innerText = "خەریکی کارکردنم...";
-        //     document.getElementById('copyBtn').classList.add('hidden');
-        //     dbgLog.classList.add('hidden');
-
-        //     // 2. Integration with External Script (script.js from GitHub)
-        //     // Note: We check if the global generate function from your script.js exists
-        //     if (typeof window.callAIGenerator === 'function') {
-        //         window.callAIGenerator(catInput, topInput);
-        //     } else if (typeof window.generateTrainingPurpose === 'function') {
-        //         window.generateTrainingPurpose(catInput, topInput);
-        //     } else {
-        //         // Fallback if script didn't load properly
-        //         setTimeout(() => {
-        //             loadDiv.classList.add('hidden');
-        //             resDiv.innerText = "هەڵە: سکرێپتی دروستکەر لە گیتھەبەوە بارنەکراوە.";
-        //             dbgLog.innerText = "Missing function: callAIGenerator in script.js";
-        //             dbgLog.classList.remove('hidden');
-        //         }, 1000);
-        //     }
-        //}
-
+      
         async function generateAIContent() {
             const dept = document.getElementById('category').value;
             const topic = document.getElementById('topic').value;
@@ -6476,7 +6377,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             resDiv.innerText = "خەریکی پەیوەندی بە AI...";
             copyBtn.classList.add('hidden');
 
-            const OPENROUTER_API_KEY = (window.ENV && window.ENV.OPENROUTER_API_KEY) || "__OPENROUTER_API_KEY__";
+            const OPENROUTER_API_KEY = "";
             const systemPrompt = `You are a professional Training Coordinator. Write a formal Training Purpose for the following training in Kurdish.
             The response MUST cover:
             1. Why the training is needed for the department: ${dept}.
@@ -7389,7 +7290,6 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
     <!-- <!-- <script type="module">
   <?!= externalScript ?>
 </script> 
-<script src="config.js"></script>
 </body>
 
 </html>
