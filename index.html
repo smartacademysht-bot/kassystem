@@ -2120,8 +2120,11 @@
         </div>
     </div>
 
+    <script src="config.js"></script>
     <script>
-        const _supabase = supabase.createClient('__SUPABASE_URL__', '__SUPABASE_ANON_KEY__');
+        const supabaseUrl = (window.ENV && window.ENV.SUPABASE_URL) || '__SUPABASE_URL__';
+        const supabaseKey = (window.ENV && window.ENV.SUPABASE_ANON_KEY) || '__SUPABASE_ANON_KEY__';
+        const _supabase = supabase.createClient(supabaseUrl, supabaseKey);
         const CURRENT_APP_VERSION = "V 9.742026";
 
         let CURR_USER = null;
@@ -3588,7 +3591,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
 
             const isProblem = /کێشە|هەڵە|ئیش ناکات|کارناکات|خراپە|bug|error|problem|not working/i.test(text);
 
-            const OPENROUTER_API_KEY = "__OPENROUTER_API_KEY__"; // Injected via GitHub Actions
+            const OPENROUTER_API_KEY = (window.ENV && window.ENV.OPENROUTER_API_KEY) || "__OPENROUTER_API_KEY__"; // Injected via GitHub Actions
             const SYSTEM_PROMPT = `تۆ KAS Assistant یت، یاریدەدەرێکی زیرەکی و شارەزای لە سیستەمی KAS Academy Portal.
 ئەرکت تەنها ڕوونکردنەوەی سیستەمەکەیە بە هەنگاو. پێویستە ئەم زاراوە ئینگلیزییانە وەک خۆی بەکاربێنیتەوە کاتێک باسی بەشەکان دەکەیت:
 
@@ -6368,7 +6371,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
         // Github Script Injection
         // // Github Script Injection
         // async function loadPrivateGithubScript() {
-        //     const githubToken = "__GH_TOKEN__";
+        //     const githubToken = (window.ENV && window.ENV.GH_TOKEN) || "__GH_TOKEN__";
         //     const username = "smartacademysht-bot"; 
         //     const repoName = "AI-Generator";
         //     const filePath = "script.js"; 
@@ -6473,7 +6476,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             resDiv.innerText = "خەریکی پەیوەندی بە AI...";
             copyBtn.classList.add('hidden');
 
-            const OPENROUTER_API_KEY = "__OPENROUTER_API_KEY__";
+            const OPENROUTER_API_KEY = (window.ENV && window.ENV.OPENROUTER_API_KEY) || "__OPENROUTER_API_KEY__";
             const systemPrompt = `You are a professional Training Coordinator. Write a formal Training Purpose for the following training in Kurdish.
             The response MUST cover:
             1. Why the training is needed for the department: ${dept}.
