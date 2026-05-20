@@ -2489,7 +2489,7 @@
                 if (CURR_USER.role === 'admin') {
                     html += `<button onclick="switchTab('oct')" id="tab-oct" class="px-4 py-2 rounded-md text-sm font-bold tab-inactive flex items-center gap-2 shrink-0"><i class="fa-solid fa-calendar-check"></i> <span data-i18n="annualPlan">Annual Plan (OCT)</span></button>`;
                     html += `<button onclick="switchTab('eff')" id="tab-eff" class="px-4 py-2 rounded-md text-sm font-bold tab-inactive flex items-center gap-2 shrink-0"><i class="fa-solid fa-bullseye"></i> Training Effectiveness</button>`;
-                    html += `<button onclick="switchTab('mission-control')" id="tab-mission-control" class="px-4 py-2 rounded-md text-sm font-bold tab-inactive flex items-center gap-2 shrink-0"><i class="fa-solid fa-list-check text-indigo-500"></i> <span>ToDo List</span></button>`;
+                    html += `<button onclick="switchTab('mission-control')" id="tab-mission-control" class="px-4 py-2 rounded-md text-sm font-bold tab-inactive flex items-center gap-2 shrink-0"><i class="fa-solid fa-list-check text-indigo-500"></i> <span>ToDo List</span><span id="mc-tab-badge" class="hidden bg-red-500 text-white text-[10px] px-1.5 py-0.5 rounded-full font-bold ml-1"></span></button>`;
                     html += `<button onclick="switchTab('settings')" id="tab-settings" class="px-4 py-2 rounded-md text-sm font-bold tab-inactive flex items-center gap-2 shrink-0"><i class="fa-solid fa-sliders"></i> <span data-i18n="settings">Settings</span></button>`;
                 }
                 // Both admin and scientific get the export button
@@ -2553,6 +2553,9 @@
                             if (!document.getElementById('view-oct').classList.contains('hidden') && CURR_USER.role === 'admin') renderOCT();
                             if (!document.getElementById('view-eff').classList.contains('hidden') && CURR_USER.role === 'admin') renderEff();
                             if (!document.getElementById('view-settings').classList.contains('hidden') && CURR_USER.role === 'admin') renderSettingsReports();
+                            if (CURR_USER.role === 'admin') {
+                                if (typeof fetchMcTasks === 'function') fetchMcTasks(true);
+                            }
                         });
                     }
                 } catch (e) { console.error("Polling error", e); }
@@ -6735,9 +6738,35 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             fetchMcTasks();
         }
 
+        // 1.5 Update ToDo List Tab & Browser Title Badge
+        window.updateMcTabBadge = function() {
+            if (!CURR_USER || CURR_USER.role !== 'admin') return;
+            
+            const pendingTasks = MC_TASKS.filter(t => t.status === 'Pending').length;
+            
+            // 1. Dynamic UI Tab Badge
+            const badgeEl = document.getElementById('mc-tab-badge');
+            if (badgeEl) {
+                if (pendingTasks > 0) {
+                    badgeEl.innerText = pendingTasks;
+                    badgeEl.classList.remove('hidden');
+                } else {
+                    badgeEl.classList.add('hidden');
+                }
+            }
+            
+            // 2. Dynamic Browser Window Tab Title Badge
+            const baseTitle = "KAS Academy Portal";
+            if (pendingTasks > 0) {
+                document.title = `(${pendingTasks}) ${baseTitle}`;
+            } else {
+                document.title = baseTitle;
+            }
+        };
+
         // 2. Fetch Tasks from Supabase
-        async function fetchMcTasks() {
-            startProgress();
+        async function fetchMcTasks(isSilent = false) {
+            if (!isSilent) startProgress();
             try {
                 const { data, error } = await _supabase
                     .from('mission_control_tasks')
@@ -6745,18 +6774,20 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                     .order('timestamp', { ascending: false });
                 
                 if (error) {
-                    showToast("Error fetching missions: " + error.message, "red");
+                    if (!isSilent) showToast("Error fetching missions: " + error.message, "red");
                     MC_TASKS = [];
                 } else {
                     MC_TASKS = data || [];
                 }
             } catch (err) {
                 console.error(err);
-                showToast("Connection error while fetching missions", "red");
+                if (!isSilent) showToast("Connection error while fetching missions", "red");
                 MC_TASKS = [];
             } finally {
-                endProgress();
+                if (!isSilent) endProgress();
             }
+            
+            updateMcTabBadge();
             
             if (activeMcSubtab === 'board') {
                 renderMcTasks();
@@ -6790,6 +6821,46 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                 renderMcAdminTable();
             }
         };
+
+        // 3.5 Send Email Notification
+        async function sendEmailNotification(toEmail, taskText, priority) {
+            if (!toEmail) return;
+            console.log(`[Email System] Initiating dispatch to ${toEmail} for task: "${taskText}"`);
+            
+            showToast(`Email notification queued for ${toEmail}`, "indigo");
+            
+            const subject = `[KAS ToDo] New Task Registered: ${taskText.substring(0, 30)}...`;
+            const message = `A new task has been registered on the KAS ToDo List:\n\nTask: ${taskText}\nPriority: ${priority}\nAdded by: ${MC_USER.name}\nTime: ${new Date().toLocaleString()}\n\nThis is an automated notification from KAS Academy Portal.`;
+            
+            try {
+                if (window.ENV && window.ENV.SMTP_ENDPOINT) {
+                    await fetch(window.ENV.SMTP_ENDPOINT, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ to: toEmail, subject, message })
+                    });
+                } else if (window.ENV && window.ENV.WEB3FORMS_ACCESS_KEY) {
+                    await fetch('https://api.web3forms.com/submit', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            access_key: window.ENV.WEB3FORMS_ACCESS_KEY,
+                            subject: subject,
+                            from_name: "KAS Academy Portal",
+                            email: toEmail,
+                            message: message
+                        })
+                    });
+                } else {
+                    console.log(`[Email System] No custom API key/endpoint configured in window.ENV. Simulated email successfully sent to ${toEmail}.`);
+                }
+            } catch (err) {
+                console.error("[Email System] Failed to send email request:", err);
+            }
+        }
 
         // 4. Add Mission Task Action
         window.addMissionControlTask = async function(event) {
@@ -6826,6 +6897,27 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                 } else {
                     textEl.value = '';
                     showToast("New mission registered!", "green");
+                    
+                    // Attempt to fetch email notification address and send notification
+                    let targetEmail = "";
+                    try {
+                        const { data: userData, error: userError } = await _supabase
+                            .from('Users')
+                            .select('Email')
+                            .eq('Username', MC_USER.name)
+                            .single();
+                        
+                        if (!userError && userData && userData.Email) {
+                            targetEmail = userData.Email;
+                        }
+                    } catch (e) {
+                        console.error("Error fetching email for notification:", e);
+                    }
+                    
+                    if (targetEmail) {
+                        sendEmailNotification(targetEmail, text, priority);
+                    }
+
                     await fetchMcTasks();
                 }
             } catch (err) {
@@ -7216,6 +7308,9 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                         </div>
                     </td>
                     <td class="p-4 border-b border-slate-100 text-center space-x-1">
+                        <button onclick="editMcTask('${t.id}')" class="px-2.5 py-1.5 bg-[#5b6af0]/10 hover:bg-[#5b6af0]/20 border border-[#5b6af0]/20 rounded-lg text-[10px] font-bold text-[#5b6af0] cursor-pointer transition">
+                            <i class="fa-solid fa-pen-to-square"></i> Edit
+                        </button>
                         <button onclick="addMcTaskComment('${t.id}')" class="px-2 py-1.5 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-lg text-[10px] font-bold text-slate-600 cursor-pointer transition">
                             <i class="fa-solid fa-comment"></i> Comment
                         </button>
@@ -7226,6 +7321,92 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                 </tr>`;
             });
         }
+
+        // 9.5 Admin Task Editing Functions
+        window.closeMcEditModal = function() {
+            closeModal('mc-edit-modal');
+        };
+
+        window.editMcTask = function(id) {
+            const task = MC_TASKS.find(t => t.id === id);
+            if (!task) return;
+            
+            document.getElementById('mc-edit-task-id').value = id;
+            document.getElementById('mc-edit-task-text').value = task.text;
+            document.getElementById('mc-edit-task-priority').value = task.priority || "Low";
+            document.getElementById('mc-edit-task-status').value = task.status || "Pending";
+            
+            document.getElementById('mc-edit-modal').classList.remove('hidden');
+            document.getElementById('mc-edit-task-text').focus();
+        };
+
+        window.saveMcTaskEdit = async function() {
+            const id = document.getElementById('mc-edit-task-id').value;
+            const newText = document.getElementById('mc-edit-task-text').value.trim();
+            const newPriority = document.getElementById('mc-edit-task-priority').value;
+            const newStatus = document.getElementById('mc-edit-task-status').value;
+            
+            if (!newText) {
+                showToast("Task description cannot be empty", "red");
+                return;
+            }
+            
+            const task = MC_TASKS.find(t => t.id === id);
+            if (!task) return;
+            
+            const oldStatus = task.status;
+            const oldPriority = task.priority;
+            const oldText = task.text;
+            
+            if (oldStatus === newStatus && oldPriority === newPriority && oldText === newText) {
+                closeMcEditModal();
+                return;
+            }
+            
+            let changelog = [];
+            try {
+                changelog = Array.isArray(task.changelog) ? [...task.changelog] : JSON.parse(task.changelog || '[]');
+            } catch (e) {
+                changelog = [];
+            }
+            
+            let changes = [];
+            if (oldText !== newText) changes.push(`description`);
+            if (oldPriority !== newPriority) changes.push(`priority to ${newPriority}`);
+            if (oldStatus !== newStatus) changes.push(`status to ${newStatus}`);
+            
+            changelog.push({
+                time: new Date().toISOString(),
+                user: MC_USER.name,
+                text: `Edited task: Modified ${changes.join(', ')}`
+            });
+
+            closeMcEditModal();
+            startProgress();
+            try {
+                const { error } = await _supabase
+                    .from('mission_control_tasks')
+                    .update({
+                        text: newText,
+                        priority: newPriority,
+                        status: newStatus,
+                        changelog: changelog
+                    })
+                    .eq('id', id);
+                
+                if (error) {
+                    showToast("Failed to edit task: " + error.message, "red");
+                } else {
+                    showToast("Task updated successfully!", "green");
+                    await fetchMcTasks();
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Connection error while updating task", "red");
+            } finally {
+                endProgress();
+            }
+        };
 
         // Helper: Format creation date for grouping heading
         function formatMcDateGroup(dateStr) {
@@ -7281,6 +7462,64 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                 </button>
                 <button onclick="saveMcTaskComment()" class="px-4 py-2 bg-[#5b6af0] text-white rounded-xl text-xs font-bold hover:bg-[#4756df] shadow-sm shadow-[#5b6af0]/20 transition cursor-pointer">
                     Save Comment
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MISSION CONTROL EDIT TASK MODAL -->
+    <div id="mc-edit-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl p-6 w-full max-w-md shadow-2xl scale-in fade-in">
+            <div class="flex items-center justify-between mb-4 border-b border-slate-100 pb-2">
+                <h3 class="font-extrabold text-sm text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
+                    <i class="fa-solid fa-pen-to-square text-[#5b6af0]"></i> Edit Mission Task
+                </h3>
+                <button onclick="closeMcEditModal()" class="text-slate-400 hover:text-red-500 transition cursor-pointer">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <input type="hidden" id="mc-edit-task-id">
+            
+            <div class="space-y-4">
+                <div>
+                    <label for="mc-edit-task-text" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Task Description</label>
+                    <textarea id="mc-edit-task-text" rows="3" class="w-full border-2 border-slate-200 px-3 py-2 rounded-xl text-sm outline-none focus:ring-2 focus:ring-[#5b6af0]/40 focus:border-[#5b6af0] transition placeholder:text-slate-400" placeholder="Task description..."></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="mc-edit-task-priority" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Priority</label>
+                        <div class="relative">
+                            <select id="mc-edit-task-priority" class="w-full text-xs font-bold bg-[#eef0f6] border-none rounded-lg p-2.5 pr-8 outline-none cursor-pointer appearance-none text-slate-600 focus:ring-2 focus:ring-[#5b6af0]/40">
+                                <option value="Low">Low</option>
+                                <option value="Medium">Medium</option>
+                                <option value="High">High</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-slate-400 text-[9px] pointer-events-none"></i>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="mc-edit-task-status" class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-1.5">Status</label>
+                        <div class="relative">
+                            <select id="mc-edit-task-status" class="w-full text-xs font-bold bg-[#eef0f6] border-none rounded-lg p-2.5 pr-8 outline-none cursor-pointer appearance-none text-slate-600 focus:ring-2 focus:ring-[#5b6af0]/40">
+                                <option value="Pending">Pending</option>
+                                <option value="In Progress">In Progress</option>
+                                <option value="Done">Done</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down absolute right-3 top-3.5 text-slate-400 text-[9px] pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-2.5 mt-6">
+                <button onclick="closeMcEditModal()" class="px-4 py-2 border border-slate-200 rounded-xl text-xs text-slate-500 hover:bg-slate-50 font-bold transition cursor-pointer">
+                    Cancel
+                </button>
+                <button onclick="saveMcTaskEdit()" class="px-4 py-2 bg-[#5b6af0] text-white rounded-xl text-xs font-bold hover:bg-[#4756df] shadow-sm shadow-[#5b6af0]/20 transition cursor-pointer">
+                    Save Changes
                 </button>
             </div>
         </div>
