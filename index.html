@@ -536,7 +536,7 @@
             <div id="view-list"
                 class="hidden fade-in flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-y-auto md:overflow-hidden" style="height:100%;max-height:100%;">
                 <div id="listSummaryCards"
-                    class="grid grid-cols-2 md:grid-cols-7 gap-3 p-4 bg-slate-50/50 border-b border-slate-100"></div>
+                    class="grid grid-cols-2 md:grid-cols-8 gap-2 p-4 bg-slate-50/50 border-b border-slate-100"></div>
 
                 <div class="px-4 py-2 border-b border-slate-100 flex flex-row gap-2 justify-between items-center bg-white flex-wrap">
                     <div class="flex flex-wrap gap-2 items-center">
@@ -1313,10 +1313,15 @@
                     <!-- COMBINED FILTER BAR (beside status filters in one line) -->
                     <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-slate-50 p-2.5 rounded-xl border border-slate-200/80 shrink-0">
                         <!-- Status Filter Tab Bar -->
-                        <div class="flex flex-wrap gap-1" id="mc-status-tabs">
-                            <button onclick="filterMcStatus('All')" id="mc-stat-all" class="px-4 py-2 rounded-lg bg-white border border-slate-200 shadow-sm text-[#5b6af0] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
-                                All <span class="bg-[#5b6af0]/15 text-[#5b6af0] px-1.5 py-0.2 rounded-full text-[10px]" id="mc-count-all">0</span>
-                            </button>
+                        <div class="flex flex-wrap gap-1 items-center" id="mc-status-tabs">
+                            <div class="flex items-center gap-1.5">
+                                <button onclick="filterMcStatus('All')" id="mc-stat-all" class="px-4 py-2 rounded-lg bg-white border border-slate-200 shadow-sm text-[#5b6af0] text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                                    All <span class="bg-[#5b6af0]/15 text-[#5b6af0] px-1.5 py-0.2 rounded-full text-[10px]" id="mc-count-all">0</span>
+                                </button>
+                                <button onclick="toggleMcHideDone()" id="mc-toggle-done" title="Toggle to hide/show done tasks" class="hidden px-2 py-2 rounded-lg bg-slate-100 hover:bg-slate-150 text-slate-400 hover:text-slate-600 text-xs transition cursor-pointer">
+                                    <i class="fa-solid fa-eye text-xs"></i>
+                                </button>
+                            </div>
                             <button onclick="filterMcStatus('Pending')" id="mc-stat-pending" class="px-4 py-2 rounded-lg bg-transparent border border-transparent text-slate-500 hover:text-slate-700 text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer">
                                 Pending <span class="bg-slate-100 text-slate-500 px-1.5 py-0.2 rounded-full text-[10px]" id="mc-count-pending">0</span>
                             </button>
@@ -2110,9 +2115,7 @@
 
     <script>
         const _supabase = supabase.createClient('https://xfkcfnscrbnwezlgmiar.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhma2NmbnNjcmJud2V6bGdtaWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTA0OTIsImV4cCI6MjA5NDUyNjQ5Mn0.yDygQlZmfRAnowr8GsIdRTWv1f4wJ4WTVb4zRlpZ4Ls');
-         const CURRENT_APP_VERSION = "V 10.2152026";
-          // const app-version-display = "V 10.2152026";
-        
+        const CURRENT_APP_VERSION = "V 10.2352026";
 
         let CURR_USER = null;
         let DATA = { requests: [], users: [], employees: [], departments: [], myDepts: [], translations: {}, formSettings: { types: [], methods: [] }, trainers: [], systemReports: [] };
@@ -2986,6 +2989,7 @@
             const dd = document.getElementById('globalDropdown');
             let html = '';
             if (CURR_USER.role === 'admin') {
+                if (r.adStatus !== 'Pending') html += `<div class="item text-slate-700" onclick="updateStatusOptimistic('${r.id}','admin','Pending')"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Pending</div>`;
                 if (r.adStatus !== 'Waiting') html += `<div class="item text-orange-500" onclick="updateStatusOptimistic('${r.id}','admin','Waiting')"><i class="fa-solid fa-hourglass-half mr-2"></i> Waiting</div>`;
                 if (r.adStatus !== 'InProgress') html += `<div class="item text-blue-600" onclick="updateStatusOptimistic('${r.id}','admin','InProgress')"><i class="fa-solid fa-spinner mr-2"></i> In Progress</div>`;
                 if (r.adStatus !== 'Done') html += `<div class="item text-green-600" onclick="openPurposeModal('${r.id}')"><i class="fa-solid fa-check mr-2"></i> Done</div>`;
@@ -2994,6 +2998,7 @@
                 html += `<div class="item text-gray-600 border-t mt-1" onclick="editExistingReq('${r.id}', event)"><i class="fa-solid fa-pen mr-2"></i> Edit</div>`;
                 html += `<div class="item text-red-700 border-t mt-1" onclick="confirmDeleteRequest('${r.id}')"><i class="fa-solid fa-trash mr-2"></i> Delete</div>`;
             } else if (CURR_USER.role === 'scientific') {
+                if (r.scStatus !== 'Pending') html += `<div class="item text-slate-700" onclick="updateStatusOptimistic('${r.id}','scientific','Pending')"><i class="fa-solid fa-clock-rotate-left mr-2"></i> Pending</div>`;
                 html += `<div class="item text-green-600" onclick="updateStatusOptimistic('${r.id}','scientific','Approved')"><i class="fa-solid fa-check mr-2"></i> Approve</div>`;
                 html += `<div class="item text-red-600" onclick="openRejectModal('${r.id}')"><i class="fa-solid fa-ban mr-2"></i> Reject</div>`;
             }
@@ -3094,8 +3099,7 @@
                 const { error } = await _supabase.from('Requests').update({
                     AdminStatus: 'Done',
                     AdminPurpose: purpose,
-                    Log: newLog,
-                    AdminDate: new Date().toISOString()
+                    Log: newLog
                 }).eq('RequestID', TEMP_ID);
 
                 endProgress();
@@ -4117,27 +4121,30 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             });
 
             const activeCls = 'ring-2 ring-blue-400 scale-105 shadow-md';
-            const c = (lbl, val, col, f) => `<div onclick="quickFilter('${f}')" class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-${col}-500 transition flex justify-between items-center ${quickFilterState === f ? activeCls : ''}"><span class="text-xs font-bold text-slate-500 uppercase">${lbl}</span><span class="text-lg font-bold text-${col}-600">${val}</span></div>`;
+            const c = (lbl, val, col, f) => `<div onclick="quickFilter('${f}')" class="min-h-[80px] bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-${col}-500 transition flex flex-col justify-between ${quickFilterState === f ? activeCls : ''}"><span class="text-[10px] font-bold text-slate-500 uppercase">${lbl}</span><span class="text-lg font-bold text-${col}-600">${val}</span></div>`;
 
             // Show separated pending for admin/scientific
             let pendingCards = '';
+            let extraAdPendingCard = '';
             if (CURR_USER && (CURR_USER.role === 'admin' || CURR_USER.role === 'scientific')) {
                 pendingCards = `
-                <div onclick="quickFilter('sc_pending')" class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-sky-500 transition flex justify-between items-center ${quickFilterState === 'sc_pending' ? activeCls : ''}">
-                    <span class="text-xs font-bold text-slate-500 uppercase">Scientific Pending</span><span class="text-lg font-bold text-sky-600">${scPend}</span>
+                <div onclick="quickFilter('sc_pending')" class="min-h-[80px] bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-sky-500 transition flex flex-col justify-between ${quickFilterState === 'sc_pending' ? activeCls : ''}">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Scientific Pending</span><span class="text-lg font-bold text-sky-600">${scPend}</span>
                 </div>
-                <div onclick="quickFilter('ad_pending')" class="bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-amber-500 transition flex justify-between items-center ${quickFilterState === 'ad_pending' ? activeCls : ''}">
-                    <span class="text-xs font-bold text-slate-500 uppercase">Training Pending</span><span class="text-lg font-bold text-amber-600">${adPend}</span>
+                <div onclick="quickFilter('ad_pending')" class="min-h-[80px] bg-white p-3 rounded-lg shadow-sm border border-slate-200 cursor-pointer hover:border-amber-500 transition flex flex-col justify-between ${quickFilterState === 'ad_pending' ? activeCls : ''}">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase">Training Pending</span><span class="text-lg font-bold text-amber-600">${adPend}</span>
                 </div>`;
             } else {
                 pendingCards = c('Pending', pend, 'amber', 'pending');
+                extraAdPendingCard = c('Training Pending', adPend, 'amber', 'ad_pending');
             }
 
             container.innerHTML = c('All Requests', t, 'blue', 'all') +
                 pendingCards +
-                c('In Progress', inprog, 'purple', 'inprogress') +
-                c('Waiting', waiting, 'orange', 'waiting') +
                 c('Approved', app, 'blue', 'approved') +
+                extraAdPendingCard +
+                c('Waiting', waiting, 'orange', 'waiting') +
+                c('In Progress', inprog, 'purple', 'inprogress') +
                 c('Completed', done, 'emerald', 'done') +
                 c('Rejected', rej, 'rose', 'rejected');
         }
@@ -6702,8 +6709,10 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
         let activeMcSubtab = 'board';
         let activeMcStatusFilter = 'All';
         let activeMcUserFilter = 'All';
+        let mcOfflineMode = false;
         let mcExpandedTasks = new Set();
         let MC_TASKS = [];
+        let mcHideDoneToggle = false; // Toggle to hide/show done tasks
 
         // 1. Tab Routing & Main Initialization
         window.initMissionControl = function() {
@@ -6776,15 +6785,18 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                     .order('timestamp', { ascending: false });
                 
                 if (error) {
-                    if (!isSilent) showToast("Error fetching missions: " + error.message, "red");
-                    MC_TASKS = [];
+                    mcOfflineMode = true;
+                    if (!isSilent) showToast("Error fetching missions: " + error.message + " — showing offline tasks if available.", "orange");
+                    MC_TASKS = MC_TASKS || [];
                 } else {
+                    mcOfflineMode = false;
                     MC_TASKS = data || [];
                 }
             } catch (err) {
                 console.error(err);
-                if (!isSilent) showToast("Connection error while fetching missions", "red");
-                MC_TASKS = [];
+                mcOfflineMode = true;
+                if (!isSilent) showToast("Connection error while fetching missions — offline mode activated.", "orange");
+                MC_TASKS = MC_TASKS || [];
             } finally {
                 if (!isSilent) endProgress();
             }
@@ -6895,7 +6907,12 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                     .insert([newTask]);
                 
                 if (error) {
-                    showToast("Failed to create mission: " + error.message, "red");
+                    mcOfflineMode = true;
+                    MC_TASKS.unshift(newTask);
+                    updateMcTabBadge();
+                    renderMcTasks();
+                    textEl.value = '';
+                    showToast("Saved locally because DB is unavailable. Tasks will display on this board.", "orange");
                 } else {
                     textEl.value = '';
                     showToast("New mission registered!", "green");
@@ -7048,6 +7065,9 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
         // 8. Filters & Counting
         window.filterMcStatus = function(status) {
             activeMcStatusFilter = status;
+            if (status !== 'All') {
+                mcHideDoneToggle = false; // Disable toggle when filtering by specific status
+            }
             
             // Update filter buttons styling as pills
             const statuses = ['All', 'Pending', 'In Progress', 'Done'];
@@ -7065,31 +7085,45 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                     }
                 }
             });
-
+            updateAllButtonToggle();
             renderMcTasks();
         };
-
-        window.filterMcUser = function(user) {
-            activeMcUserFilter = user;
+        
+        window.toggleMcHideDone = function() {
+            if (activeMcStatusFilter !== 'All') return; // Only works when viewing all
+            mcHideDoneToggle = !mcHideDoneToggle;
+            updateAllButtonToggle();
             renderMcTasks();
         };
-
-        window.toggleMcTaskHistory = function(id) {
-            if (mcExpandedTasks.has(id)) {
-                mcExpandedTasks.delete(id);
+        
+        function updateAllButtonToggle() {
+            const toggleBtn = document.getElementById('mc-toggle-done');
+            if (activeMcStatusFilter === 'All') {
+                if (toggleBtn) {
+                    toggleBtn.classList.remove('hidden');
+                    const icon = toggleBtn.querySelector('i');
+                    if (icon) {
+                        if (mcHideDoneToggle) {
+                            icon.className = 'fa-solid fa-eye-slash text-xs';
+                            toggleBtn.title = 'Showing active tasks only (toggle to show all)';
+                        } else {
+                            icon.className = 'fa-solid fa-eye text-xs';
+                            toggleBtn.title = 'Showing all tasks (toggle to hide done)';
+                        }
+                    }
+                }
             } else {
-                mcExpandedTasks.add(id);
+                if (toggleBtn) toggleBtn.classList.add('hidden');
             }
-            renderMcTasks();
-        };
+        }
 
-        // 9. Card Grid Rendering
+
         function renderMcTasks() {
-            const tasks = MC_TASKS;
             const container = document.getElementById('mc-tasks-container');
             if (!container) return;
             container.innerHTML = '';
-
+            
+            const tasks = MC_TASKS;
             // Compute Counts for Status Filter Tabs
             const countAll = tasks.length;
             const countPending = tasks.filter(t => t.status === 'Pending').length;
@@ -7120,11 +7154,15 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
             if (activeMcUserFilter !== 'All') {
                 list = list.filter(t => t.author === activeMcUserFilter);
             }
+            if (mcHideDoneToggle && activeMcStatusFilter === 'All') {
+                list = list.filter(t => t.status !== 'Done');
+            }
 
             if (list.length === 0) {
+                const message = 'No tasks found matching current filters.';
                 container.innerHTML = `<div class="bg-white rounded-2xl border border-slate-200 p-8 text-center text-slate-400">
                     <i class="fa-solid fa-list-check text-4xl mb-2 text-slate-300"></i>
-                    <p class="text-sm font-semibold">No tasks found matching current filters</p>
+                    <p class="text-sm font-semibold">${message}</p>
                 </div>`;
                 return;
             }
@@ -7154,10 +7192,16 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">`;
 
                 grouped[dateLabel].forEach(t => {
-                    // Accent border colored by status
+                    // Accent border and background color by status
                     let borderCls = 'border-l-4 border-amber-500'; // Pending
-                    if (t.status === 'In Progress') borderCls = 'border-l-4 border-[#5b6af0]';
-                    else if (t.status === 'Done') borderCls = 'border-l-4 border-emerald-500';
+                    let cardBg = 'bg-amber-50/80';
+                    if (t.status === 'In Progress') {
+                        borderCls = 'border-l-4 border-[#5b6af0]';
+                        cardBg = 'bg-sky-50/80';
+                    } else if (t.status === 'Done') {
+                        borderCls = 'border-l-4 border-emerald-500';
+                        cardBg = 'bg-emerald-50/80';
+                    }
 
                     // Priority Badge
                     let pBadge = `<span class="px-2 py-0.5 rounded-md text-[9px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-100 uppercase">Low</span>`;
@@ -7210,7 +7254,7 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
                         </div>`;
                     }
 
-                    dateHtml += `<div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition hover:-translate-y-[2px] duration-300 flex flex-col justify-between ${borderCls}">
+                    dateHtml += `<div class="rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition hover:-translate-y-[2px] duration-300 flex flex-col justify-between ${borderCls} ${cardBg}">
                         <div>
                             <div class="flex items-center justify-between gap-2 mb-2 shrink-0">
                                 <div class="flex items-center gap-2">
@@ -7256,6 +7300,20 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
         }
 
         // 10. Admin Table Rendering
+        window.filterMcUser = function(author) {
+            activeMcUserFilter = author;
+            renderMcTasks();
+        };
+        
+        window.toggleMcTaskHistory = function(id) {
+            if (mcExpandedTasks.has(id)) {
+                mcExpandedTasks.delete(id);
+            } else {
+                mcExpandedTasks.add(id);
+            }
+            renderMcTasks();
+        };
+
         function renderMcAdminTable() {
             const tasks = MC_TASKS;
             const tbody = document.getElementById('mc-admin-table-body');
