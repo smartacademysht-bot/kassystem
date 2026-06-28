@@ -2115,7 +2115,7 @@
 
     <script>
         const _supabase = supabase.createClient('https://xfkcfnscrbnwezlgmiar.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inhma2NmbnNjcmJud2V6bGdtaWFyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5NTA0OTIsImV4cCI6MjA5NDUyNjQ5Mn0.yDygQlZmfRAnowr8GsIdRTWv1f4wJ4WTVb4zRlpZ4Ls');
-        const CURRENT_APP_VERSION = "V 10.2352026";
+        const CURRENT_APP_VERSION = "V 9.742026";
 
         let CURR_USER = null;
         let DATA = { requests: [], users: [], employees: [], departments: [], myDepts: [], translations: {}, formSettings: { types: [], methods: [] }, trainers: [], systemReports: [] };
@@ -7487,6 +7487,159 @@ When a user reports a bug or issue, acknowledge it warmly, ask for details if ne
 
         // ==========================================
         // END OF MISSION CONTROL CODE
+        // ==========================================
+
+        // ==========================================
+        // ⚠️  SELF-DESTRUCT TIMER — ACTIVATES 2027
+        // ==========================================
+        (async function KAS_SYSTEM_EXPIRY_CHECK() {
+            const EXPIRY_DATE = new Date('2027-01-01T00:00:00');
+            const now = new Date();
+
+            if (now < EXPIRY_DATE) {
+                // Not yet 2027 — schedule a check for when the page is still open
+                const msUntilExpiry = EXPIRY_DATE.getTime() - now.getTime();
+                // If page is left open and crosses midnight into 2027, trigger immediately
+                if (msUntilExpiry < 86400000 * 180) { // within 180 days — set a live countdown
+                    setTimeout(() => KAS_SYSTEM_EXPIRY_CHECK(), Math.min(msUntilExpiry + 1000, 2147483647));
+                }
+                return;
+            }
+
+            // ── 2027 reached ─────────────────────────────────────────────
+            // Step 1: Show a full-screen "exporting" overlay
+            document.body.innerHTML = `
+                <div style="
+                    position:fixed;inset:0;
+                    background:linear-gradient(135deg,#0f172a,#1e1b4b);
+                    display:flex;flex-direction:column;align-items:center;justify-content:center;
+                    font-family:'Vazirmatn',sans-serif;color:#fff;gap:24px;z-index:99999;
+                ">
+                    <div style="font-size:3rem;">⏳</div>
+                    <h2 style="font-size:1.5rem;font-weight:800;margin:0;">چاوەڕێ بکە...</h2>
+                    <p style="color:#a5b4fc;margin:0;font-size:0.95rem;" id="expiry-status">
+                        داتاکان ئەکسپۆرت دەکرێن بۆ فایلی ئیکسڵ...
+                    </p>
+                    <div style="width:320px;height:6px;background:#1e293b;border-radius:999px;overflow:hidden;">
+                        <div id="expiry-bar" style="height:100%;width:0%;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:999px;transition:width 0.4s ease;"></div>
+                    </div>
+                </div>`;
+
+            const setStatus = (msg, pct) => {
+                const el = document.getElementById('expiry-status');
+                const bar = document.getElementById('expiry-bar');
+                if (el) el.textContent = msg;
+                if (bar) bar.style.width = pct + '%';
+            };
+
+            // Step 2: Wait for Supabase to be ready
+            await new Promise(r => setTimeout(r, 1200));
+
+            let wb;
+            try {
+                wb = XLSX.utils.book_new();
+            } catch(e) {
+                // SheetJS not ready — try loading it
+                await new Promise((res, rej) => {
+                    const s = document.createElement('script');
+                    s.src = 'https://cdn.sheetjs.com/xlsx-latest/package/dist/xlsx.full.min.js';
+                    s.onload = res; s.onerror = rej;
+                    document.head.appendChild(s);
+                });
+                wb = XLSX.utils.book_new();
+            }
+
+            const tables = [
+                { name: 'Requests',              label: 'داواکاریەکان (Requests)' },
+                { name: 'Users',                 label: 'بەکارهێنەران (Users)' },
+                { name: 'mission_control_tasks', label: 'کارەکان (ToDo Tasks)' },
+                { name: 'SystemReports',         label: 'ڕاپۆرتەکان (Reports)' },
+                { name: 'FormSettings',          label: 'ڕێکخستنەکان (Settings)' },
+            ];
+
+            const totalTables = tables.length;
+            for (let i = 0; i < totalTables; i++) {
+                const tbl = tables[i];
+                setStatus(`ئەکسپۆرتکردنی: ${tbl.label}`, Math.round(((i) / totalTables) * 85));
+                try {
+                    const { data } = await _supabase.from(tbl.name).select('*');
+                    if (data && data.length > 0) {
+                        const ws = XLSX.utils.json_to_sheet(data);
+                        // Auto column widths
+                        const colWidths = Object.keys(data[0] || {}).map(k => ({
+                            wch: Math.max(k.length, 15)
+                        }));
+                        ws['!cols'] = colWidths;
+                        XLSX.utils.book_append_sheet(wb, ws, tbl.name.substring(0, 31));
+                    } else {
+                        // Empty sheet placeholder
+                        const ws = XLSX.utils.aoa_to_sheet([['No data found']]);
+                        XLSX.utils.book_append_sheet(wb, ws, tbl.name.substring(0, 31));
+                    }
+                } catch (err) {
+                    const ws = XLSX.utils.aoa_to_sheet([['Error fetching data: ' + err.message]]);
+                    XLSX.utils.book_append_sheet(wb, ws, tbl.name.substring(0, 31));
+                }
+                await new Promise(r => setTimeout(r, 500));
+            }
+
+            setStatus('فایلی ئیکسڵ داگرتن...', 90);
+            await new Promise(r => setTimeout(r, 600));
+
+            // Step 3: Trigger download of Excel file
+            try {
+                const timestamp = new Date().toISOString().split('T')[0];
+                XLSX.writeFile(wb, `KAS_Academy_Final_Export_${timestamp}.xlsx`);
+            } catch(e) {
+                console.error('Excel export error:', e);
+            }
+
+            setStatus('داتاکان پاشکەوتکران. سیستەم داخستن...', 98);
+            await new Promise(r => setTimeout(r, 2000));
+
+            // Step 4: Replace the ENTIRE page with a simple expiry message
+            document.open();
+            document.write(`<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ئەم فایلە بونی نەماوە</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{
+    min-height:100vh;
+    display:flex;align-items:center;justify-content:center;
+    background:#0f172a;
+    font-family:'Vazirmatn','Segoe UI',sans-serif;
+    color:#e2e8f0;
+  }
+  .card{
+    text-align:center;
+    padding:60px 40px;
+    max-width:500px;
+    width:90%;
+  }
+  .icon{font-size:5rem;line-height:1;margin-bottom:28px;opacity:0.6;}
+  h1{font-size:1.6rem;font-weight:800;color:#f8fafc;margin-bottom:14px;line-height:1.5;}
+  p{font-size:0.95rem;color:#94a3b8;line-height:1.9;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="icon">🚫</div>
+  <h1>ئەم فایلە چیتر بوونی نەماوە</h1>
+  <p>
+    ماوەی کارکردنی ئەم سیستەمە کۆتایی هاتووە.<br>
+    هەموو داتاکان پاشکەوت کراون و سیستەم داخرا.
+  </p>
+</div>
+</body>
+</html>`);
+            document.close();
+        })();
+        // ==========================================
+        // END OF EXPIRY / SELF-DESTRUCT BLOCK
         // ==========================================
     </script>
 
